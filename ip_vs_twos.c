@@ -26,7 +26,7 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
                                               const struct sk_buff *skb,
                                               struct ip_vs_iphdr *iph) {
   struct ip_vs_dest *dest, *choice1 = NULL, *choice2 = NULL;
-  int rweight1, rweight2, weight1, nweight1 = 0, nweight2 = 0, total_weight = 0,
+  int rweight1, rweight2, nweight1 = 0, nweight2 = 0, total_weight = 0,
                           weight = 0;
 
   IP_VS_DBG(6, "ip_vs_twos_schedule(): Scheduling...\n");
@@ -72,7 +72,7 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
  * Find the second weighted dest, do not include the first choice in the search
  */
 secondstage:
-  rweight2 = prandom_u32() % (total_weight - weight1);
+  rweight2 = prandom_u32() % (total_weight - weight);
   list_for_each_entry_rcu(dest, &svc->destinations, n_list) {
     if (!(dest->flags & IP_VS_DEST_F_OVERLOAD) && dest != choice1) {
       weight = atomic_read(&dest->weight);
