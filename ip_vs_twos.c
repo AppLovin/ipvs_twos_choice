@@ -50,6 +50,7 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
   }
 
   rweight1 = prandom_u32() % total_weight;
+  rweight2 = prandom_u32() % total_weight;
 
   /*
    * Find the first weighted dest
@@ -59,35 +60,26 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
       weight = atomic_read(&dest->weight);
       if (weight > 0) {
         rweight1 -= weight;
-        if (rweight1 <= 0) {
+        rweight2 -= weight;
+
+        if (rweight1 <= 0 && choice1 != NULL) {
           choice1 = dest;
           nweight1 = weight * ip_vs_dest_conn_overhead(dest);
-          goto secondstage;
         }
-      }
-    }
-  }
 
-/*
- * Find the second weighted dest, do not include the first choice in the search
- */
-secondstage:
-  rweight2 = prandom_u32() % (total_weight - weight);
-  list_for_each_entry_rcu(dest, &svc->destinations, n_list) {
-    if (!(dest->flags & IP_VS_DEST_F_OVERLOAD) && dest != choice1) {
-      weight = atomic_read(&dest->weight);
-      if (weight > 0) {
-        rweight2 -= weight;
-        if (rweight2 <= 0) {
+        if (rweight2 <= 0 && choice2 != NULL) {
           choice2 = dest;
           nweight2 = weight * ip_vs_dest_conn_overhead(dest);
-          goto choicestage;
+        }
+
+        if (choice1 != NULL && choice2 != NULL) {
+          goto nextstage;
         }
       }
     }
   }
 
-choicestage:
+nextstage:
   if (choice2 != NULL && nweight2 > nweight1) {
     choice1 = choice2;
     nweight1 = nweight2;

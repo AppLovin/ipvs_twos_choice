@@ -25,6 +25,7 @@ static int ip_vs_twos_schedule(std::vector<int> destinations) {
   }
 
   rweight1 = rand() % total_weight;
+  rweight2 = rand() % total_weight;
 
   /*
    * Find the first weighted dest
@@ -33,26 +34,20 @@ static int ip_vs_twos_schedule(std::vector<int> destinations) {
     weight = destinations[dest];
     if (weight > 0) {
       rweight1 -= weight;
-      if (rweight1 <= 0) {
+      rweight2 -= weight;
+
+      if (rweight1 <= 0 && choice1 != -1) {
         choice1 = dest;
         weight1 = weight;
-        goto secondstage;
       }
-    }
-  }
 
-/*
- * Find the second weighted dest, do not include the first choice in the search
- */
-secondstage:
-  rweight2 = rand() % (total_weight - weight1);
-  for (dest = 0; dest < destinations.size(); ++dest) {
-    weight = destinations[dest];
-    if (weight > 0) {
-      rweight2 -= weight;
-      if (rweight2 <= 0) {
+      if (rweight2 <= 0 && choice2 == -1) {
         choice2 = dest;
         weight2 = weight;
+      }
+
+      if (choice1 != -1 && choice2 != -1)
+      {
         goto choicestage;
       }
     }
@@ -70,7 +65,7 @@ choicestage:
 TEST(IPVSTwosTest, TestTwosChoice) {
     std::vector<int> dests = {10,10,10,10,10,10,10};
 
-    for (int i = 0; i < 1000; ++i)
+    for (int i = 0; i < 10000; ++i)
     {
         int choice = ip_vs_twos_schedule(dests);
 
