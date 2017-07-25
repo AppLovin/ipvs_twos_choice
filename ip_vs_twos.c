@@ -59,7 +59,7 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
       weight = atomic_read(&dest->weight);
       if (weight > 0) {
         rweight1 -= weight;
-        if (rweight1 <= 0 && weight1 != 0) {
+        if (rweight1 <= 0) {
           choice1 = dest;
           weight1 = weight * ip_vs_dest_conn_overhead(dest);
           goto secondstage;
@@ -78,7 +78,7 @@ secondstage:
       weight = atomic_read(&dest->weight);
       if (weight > 0) {
         rweight2 -= weight;
-        if (rweight2 <= 0 && weight2 != 0) {
+        if (rweight2 <= 0) {
           choice2 = dest;
           weight2 = weight * ip_vs_dest_conn_overhead(dest);
           goto choicestage;
@@ -88,7 +88,7 @@ secondstage:
   }
 
 choicestage:
-  if (choice2 != NULL && weight2 < weight1) {
+  if (choice2 != NULL && weight2 > weight1) {
     choice1 = choice2;
     weight1 = weight2;
   }
