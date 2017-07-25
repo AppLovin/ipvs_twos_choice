@@ -62,12 +62,12 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
         rweight1 -= weight;
         rweight2 -= weight;
 
-        if (rweight1 <= 0 && choice1 != NULL) {
+        if (rweight1 <= 0 && choice1 == NULL) {
           choice1 = dest;
           nweight1 = weight * ip_vs_dest_conn_overhead(dest);
         }
 
-        if (rweight2 <= 0 && choice2 != NULL) {
+        if (rweight2 <= 0 && choice2 == NULL) {
           choice2 = dest;
           nweight2 = weight * ip_vs_dest_conn_overhead(dest);
         }
