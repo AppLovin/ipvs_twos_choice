@@ -26,7 +26,7 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
                                               const struct sk_buff *skb,
                                               struct ip_vs_iphdr *iph) {
   struct ip_vs_dest *dest, *choice1 = NULL, *choice2 = NULL;
-  int rweight1, rweight2, weight1 = 0, weight2 = 0, total_weight = 0,
+  int rweight1, rweight2, weight1, nweight1 = 0, nweight2 = 0, total_weight = 0,
                           weight = 0;
 
   IP_VS_DBG(6, "ip_vs_twos_schedule(): Scheduling...\n");
@@ -61,7 +61,7 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
         rweight1 -= weight;
         if (rweight1 <= 0) {
           choice1 = dest;
-          weight1 = weight * ip_vs_dest_conn_overhead(dest);
+          nweight1 = weight * ip_vs_dest_conn_overhead(dest);
           goto secondstage;
         }
       }
@@ -80,7 +80,7 @@ secondstage:
         rweight2 -= weight;
         if (rweight2 <= 0) {
           choice2 = dest;
-          weight2 = weight * ip_vs_dest_conn_overhead(dest);
+          nweight2 = weight * ip_vs_dest_conn_overhead(dest);
           goto choicestage;
         }
       }
@@ -88,9 +88,9 @@ secondstage:
   }
 
 choicestage:
-  if (choice2 != NULL && weight2 > weight1) {
+  if (choice2 != NULL && nweight2 > nweight1) {
     choice1 = choice2;
-    weight1 = weight2;
+    nweight1 = nweight2;
   }
 
   IP_VS_DBG_BUF(6, "twos: server %s:%u "
@@ -98,7 +98,7 @@ choicestage:
                 IP_VS_DBG_ADDR(choice1->af, &choice1->addr),
                 ntohs(choice1->port), atomic_read(&choice1->activeconns),
                 refcount_read(&choice1->refcnt), atomic_read(&choice1->weight),
-                weight1);
+                nweight1);
 
   return choice1;
 }
