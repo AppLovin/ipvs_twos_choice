@@ -26,7 +26,7 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
                                               const struct sk_buff *skb,
                                               struct ip_vs_iphdr *iph) {
   struct ip_vs_dest *dest, *choice1 = NULL, *choice2 = NULL;
-  int rweight1, rweight2, nweight1 = 0, nweight2 = 0, total_weight = 0,
+  int rweight1, rweight2, nweight1 = -1, nweight2 = -1, total_weight = 0,
                           weight = 0;
 
   IP_VS_DBG(6, "ip_vs_twos_schedule(): Scheduling...\n");
@@ -62,17 +62,17 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
         rweight1 -= weight;
         rweight2 -= weight;
 
-        if (rweight1 <= 0 && choice1 == NULL) {
+        if (rweight1 <= 0 && nweight1 == -1) {
           choice1 = dest;
           nweight1 = weight * ip_vs_dest_conn_overhead(dest);
         }
 
-        if (rweight2 <= 0 && choice2 == NULL) {
+        if (rweight2 <= 0 && nweight2 == -1) {
           choice2 = dest;
           nweight2 = weight * ip_vs_dest_conn_overhead(dest);
         }
 
-        if (choice1 != NULL && choice2 != NULL) {
+        if (nweight1 != -1 && nweight2 != -1) {
           goto nextstage;
         }
       }
@@ -115,3 +115,5 @@ static void __exit ip_vs_twos_cleanup(void) {
 module_init(ip_vs_twos_init);
 module_exit(ip_vs_twos_cleanup);
 MODULE_LICENSE("GPL");
+MODULE_VERSION("0.1");
+MODULE_AUTHOR("Darby Payne");
