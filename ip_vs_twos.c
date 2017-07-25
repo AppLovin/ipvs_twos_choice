@@ -26,7 +26,7 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
                                               const struct sk_buff *skb,
                                               struct ip_vs_iphdr *iph) {
   struct ip_vs_dest *dest, *choice1 = NULL, *choice2 = NULL;
-  int rweight1, rweight2, nweight1 = -1, nweight2 = -1, total_weight = 0,
+  int rweight1, rweight2, weight1 = -1, weight2 = -1, overhead1, overhead2, total_weight = 0,
                           weight = 0;
 
   IP_VS_DBG(6, "ip_vs_twos_schedule(): Scheduling...\n");
@@ -62,17 +62,19 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
         rweight1 -= weight;
         rweight2 -= weight;
 
-        if (rweight1 <= 0 && nweight1 == -1) {
+        if (rweight1 <= 0 && weight1 == -1) {
           choice1 = dest;
-          nweight1 = weight * ip_vs_dest_conn_overhead(dest);
+          weight1 = weight;
+          overhead1 = ip_vs_dest_conn_overhead(dest);
         }
 
-        if (rweight2 <= 0 && nweight2 == -1) {
+        if (rweight2 <= 0 && weight2 == -1) {
           choice2 = dest;
-          nweight2 = weight * ip_vs_dest_conn_overhead(dest);
+          weight2 = weight * ip_vs_dest_conn_overhead(dest);
+          overhead2 = ip_vs_dest_conn_overhead(dest);
         }
 
-        if (nweight1 != -1 && nweight2 != -1) {
+        if (weight1 != -1 && weight2 != -1) {
           goto nextstage;
         }
       }
@@ -80,9 +82,9 @@ static struct ip_vs_dest *ip_vs_twos_schedule(struct ip_vs_service *svc,
   }
 
 nextstage:
-  if (choice2 != NULL && nweight2 > nweight1) {
+  if (choice2 != NULL && (weight2 * overhead1) > (weight1 * overhead2)) {
     choice1 = choice2;
-    nweight1 = nweight2;
+    weight1 = weight2;
   }
 
   IP_VS_DBG_BUF(6, "twos: server %s:%u "
@@ -90,7 +92,7 @@ nextstage:
                 IP_VS_DBG_ADDR(choice1->af, &choice1->addr),
                 ntohs(choice1->port), atomic_read(&choice1->activeconns),
                 refcount_read(&choice1->refcnt), atomic_read(&choice1->weight),
-                nweight1);
+                weight1);
 
   return choice1;
 }
