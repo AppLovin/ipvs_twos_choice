@@ -6,9 +6,14 @@ KERNEL_HEADER_VER=$(shell uname -r)
 endif
 
 TEST_TARGET=test/ip_vs_twos_test
+PWD=$(shell pwd)
 
 all:
 	make -C /lib/modules/$(KERNEL_HEADER_VER)/build M=$(PWD) modules
+
+install:
+	make -C /lib/modules/$(KERNEL_HEADER_VER)/build M=$(PWD) modules_install
+	depmod -a
 
 clean:
 	make -C /lib/modules/$(KERNEL_HEADER_VER)/build M=$(PWD) clean
